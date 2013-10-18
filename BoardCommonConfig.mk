@@ -18,6 +18,7 @@
 # by BoardConfigVendor.mk
 USE_CAMERA_STUB := true
 BOARD_USES_GENERIC_AUDIO := false
+RAMDISK_HACK := true
 
 TARGET_BOOTANIMATION_PRELOAD := true
 
