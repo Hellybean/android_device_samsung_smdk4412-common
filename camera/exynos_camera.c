@@ -2114,6 +2114,11 @@ int exynos_camera_capture_start(struct exynos_camera *exynos_camera)
 	goto complete;
 
 error:
+	if (exynos_camera->face_data != NULL && exynos_camera->face_data->release != NULL) {
+		exynos_camera->face_data->release(exynos_camera->face_data);
+		exynos_camera->face_data = NULL;
+	}
+
 	if (exynos_camera->capture_memory != NULL && exynos_camera->capture_memory->release != NULL) {
 		exynos_camera->capture_memory->release(exynos_camera->capture_memory);
 		exynos_camera->capture_memory = NULL;
@@ -2156,6 +2161,11 @@ void exynos_camera_capture_stop(struct exynos_camera *exynos_camera)
 	rc = exynos_v4l2_streamoff_cap(exynos_camera, 0);
 	if (rc < 0) {
 		ALOGE("%s: Unable to stop stream", __func__);
+	}
+
+	if (exynos_camera->face_data != NULL && exynos_camera->face_data->release != NULL) {
+		exynos_camera->face_data->release(exynos_camera->face_data);
+		exynos_camera->face_data = NULL;
 	}
 
 	if (exynos_camera->capture_memory != NULL && exynos_camera->capture_memory->release != NULL) {
@@ -3802,6 +3812,7 @@ complete:
 
 void exynos_camera_recording_thread_stop(struct exynos_camera *exynos_camera)
 {
+	camera_memory_t *memory;
 	int i;
 
 	if (exynos_camera == NULL)
@@ -3813,6 +3824,8 @@ void exynos_camera_recording_thread_stop(struct exynos_camera *exynos_camera)
 		ALOGE("Recording thread was already stopped!");
 		return;
 	}
+
+	memory = exynos_camera->recording_memory;
 
 	if (exynos_camera->recording_listener != NULL) {
 		exynos_camera_capture_listener_unregister(exynos_camera, exynos_camera->recording_listener);
@@ -3841,6 +3854,11 @@ void exynos_camera_recording_thread_stop(struct exynos_camera *exynos_camera)
 
 	pthread_mutex_destroy(&exynos_camera->recording_mutex);
 	pthread_mutex_destroy(&exynos_camera->recording_lock_mutex);
+
+	if (memory != NULL && memory->release != NULL) {
+		memory->release(memory);
+		exynos_camera->recording_memory = NULL;
+	}
 }
 
 // Auto-focus
